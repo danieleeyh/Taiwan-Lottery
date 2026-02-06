@@ -220,11 +220,9 @@
         }
 
         function togglePowerball2(num) {
-            if (pickedPowerball2.has(num)) {
-                pickedPowerball2.delete(num);
-            } else {
-                pickedPowerball2.add(num);
-            }
+            // 第二區只能選 1 個號碼
+            pickedPowerball2.clear();
+            pickedPowerball2.add(num);
             updateUI();
         }
 
@@ -280,11 +278,12 @@
             const selected = pool.slice(0, 6 - pickedNumbers.size);
             const finalNumbers = [...pickedNumbers, ...selected].sort((a,b) => a-b);
 
-            // 威力彩第二區
+            // 威力彩第二區（只能選 1 個）
             const powerball2Pool = powerball2Hot.filter(n => !pickedPowerball2.has(n));
             shuffle(powerball2Pool);
-            const powerball2Selected = powerball2Pool.slice(0, 1 - pickedPowerball2.size);
-            const finalPowerball2 = [...pickedPowerball2, ...powerball2Selected].sort((a,b) => a-b);
+            // AI 推薦 0 或 1 個（補滿到 1 個）
+            const powerball2Selected = pickedPowerball2.size === 0 ? [powerball2Pool[0]] : [];
+            const finalPowerball2 = [...pickedPowerball2, ...powerball2Selected];
 
             // 顯示推薦
             if (currentTab === 'lotto') {
