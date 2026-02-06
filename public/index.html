@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣彩券分析器</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 30px; font-size: 2rem; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .tab { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: all 0.3s; background: rgba(255,255,255,0.1); color: #fff; }
+        .tab.active { background: #e94560; }
+        .tab:hover:not(.active) { background: rgba(255,255,255,0.2); }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px; }
+        .stat-card { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; text-align: center; }
+        .stat-value { font-size: 2rem; font-weight: bold; color: #e94560; }
+        .stat-label { color: #aaa; margin-top: 5px; }
+        .section { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .section h2 { margin-bottom: 15px; color: #e94560; }
+        .filter-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        .filter-btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; background: rgba(255,255,255,0.1); color: #fff; transition: all 0.3s; }
+        .filter-btn.active { background: #0f3460; border: 2px solid #e94560; }
+        .filter-btn:hover:not(.active) { background: rgba(255,255,255,0.2); }
+        .numbers { display: flex; flex-wrap: wrap; gap: 8px; }
+        .number { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-weight: bold; font-size: 1.1rem; }
+        .lotto-num { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .powerball-num { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .recommendation { background: rgba(233, 69, 96, 0.2); border: 2px solid #e94560; padding: 20px; border-radius: 12px; text-align: center; }
+        .recommendation h3 { color: #e94560; margin-bottom: 15px; }
+        .rec-nums { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .rec-num { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #e94560; font-weight: bold; font-size: 1.2rem; }
+        .history { max-height: 400px; overflow-y: auto; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .history-date { color: #aaa; font-size: 0.9rem; }
+        .history-nums { display: flex; gap: 5px; }
+        .loading { text-align: center; padding: 40px; color: #aaa; }
+        .search-box { background: rgba(255,255,255,0.08); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .search-box h3 { margin-bottom: 15px; color: #fff; }
+        .search-inputs { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px; }
+        .search-inputs input { width: 60px; height: 50px; text-align: center; font-size: 1.2rem; border: 2px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.1); color: #fff; }
+        .search-inputs input:focus { outline: none; border-color: #e94560; }
+        .search-btn { padding: 12px 30px; border: none; border-radius: 8px; cursor: pointer; background: #e94560; color: #fff; font-size: 1rem; transition: all 0.3s; }
+        .search-btn:hover { background: #ff6b6b; }
+        .search-result { padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center; font-size: 1.1rem; }
+        .search-result.never { background: rgba(46, 204, 113, 0.2); border: 2px solid #2ecc71; color: #2ecc71; }
+        .search-result.drawn { background: rgba(231, 76, 60, 0.2); border: 2px solid #e74c3c; color: #e74c3c; }
+        .data-range { text-align: center; color: #aaa; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>台灣彩券分析器</h1>
+        <p class="data-range">數據範圍：2007-2026</p>
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('lotto')">大樂透</button>
+            <button class="tab" onclick="showTab('powerball')">威力彩</button>
+        </div>
+        <div id="lotto-section">
+            <div class="search-box">
+                <h3>查詢組合是否開出過（2007-2026）</h3>
+                <div class="search-inputs">
+                    <input type="number" id="lotto-search-1" min="1" max="49" placeholder="1">
+                    <input type="number" id="lotto-search-2" min="1" max="49" placeholder="2">
+                    <input type="number" id="lotto-search-3" min="1" max="49" placeholder="3">
+                    <input type="number" id="lotto-search-4" min="1" max="49" placeholder="4">
+                    <input type="number" id="lotto-search-5" min="1" max="49" placeholder="5">
+                    <input type="number" id="lotto-search-6" min="1" max="49" placeholder="6">
+                </div>
+                <button class="search-btn" onclick="searchLotto()">查詢</button>
+                <div id="lotto-search-result" style="display:none;"></div>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="lotto-count">-</div><div class="stat-label">總期數</div></div>
+                <div class="stat-card"><div class="stat-value" id="lotto-latest">-</div><div class="stat-label">最新期數</div></div>
+                <div class="stat-card"><div class="stat-value" id="lotto-top">-</div><div class="stat-label">最常開出</div></div>
+            </div>
+            <div class="section">
+                <h2>號碼頻率分析</h2>
+                <div class="filter-btns">
+                    <button class="filter-btn active" onclick="filterLotto('hot')">熱門號碼</button>
+                    <button class="filter-btn" onclick="filterLotto('cold')">冷門號碼</button>
+                    <button class="filter-btn" onclick="filterLotto('absent')">遺漏號碼</button>
+                </div>
+                <div class="numbers" id="lotto-analysis"></div>
+            </div>
+            <div class="recommendation">
+                <h3>AI 推薦號碼</h3>
+                <div class="rec-nums" id="lotto-recommend"></div>
+            </div>
+            <div class="section">
+                <h2>歷史開獎（最新20期）</h2>
+                <div class="history" id="lotto-history"></div>
+            </div>
+        </div>
+        <div id="powerball-section" style="display:none;">
+            <div class="search-box">
+                <h3>查詢組合是否開出過（2008-2026）</h3>
+                <div class="search-inputs">
+                    <input type="number" id="powerball-search-1" min="1" max="49" placeholder="1">
+                    <input type="number" id="powerball-search-2" min="1" max="49" placeholder="2">
+                    <input type="number" id="powerball-search-3" min="1" max="49" placeholder="3">
+                    <input type="number" id="powerball-search-4" min="1" max="49" placeholder="4">
+                    <input type="number" id="powerball-search-5" min="1" max="49" placeholder="5">
+                    <input type="number" id="powerball-search-6" min="1" max="49" placeholder="6">
+                </div>
+                <button class="search-btn" onclick="searchPowerball()">查詢</button>
+                <div id="powerball-search-result" style="display:none;"></div>
+            </div>
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="powerball-count">-</div><div class="stat-label">總期數</div></div>
+                <div class="stat-card"><div class="stat-value" id="powerball-latest">-</div><div class="stat-label">最新期數</div></div>
+                <div class="stat-card"><div class="stat-value" id="powerball-top">-</div><div class="stat-label">最常開出</div></div>
+            </div>
+            <div class="section">
+                <h2>號碼頻率分析</h2>
+                <div class="filter-btns">
+                    <button class="filter-btn active" onclick="filterPowerball('hot')">熱門號碼</button>
+                    <button class="filter-btn" onclick="filterPowerball('cold')">冷門號碼</button>
+                    <button class="filter-btn" onclick="filterPowerball('absent')">遺漏號碼</button>
+                </div>
+                <div class="numbers" id="powerball-analysis"></div>
+            </div>
+            <div class="recommendation">
+                <h3>AI 推薦號碼</h3>
+                <div class="rec-nums" id="powerball-recommend"></div>
+            </div>
+            <div class="section">
+                <h2>歷史開獎（最新20期）</h2>
+                <div class="history" id="powerball-history"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let lottoData = [], powerballData = [];
+        let lottoDraws = new Set(), powerballDraws = new Set();
+        let lottoAnalysis = {}, powerballAnalysis = {};
+        let currentLottoFilter = 'hot';
+        let currentPowerballFilter = 'hot';
+
+        const lottoFiles = ['2007/大樂透_2007.csv','2008/大樂透_2008.csv','2009/大樂透_2009.csv','2010/大樂透_2010.csv','2011/大樂透_2011.csv','2012/大樂透_2012.csv','2013/大樂透_2013.csv','2014/大樂透_2014.csv','2015/大樂透_2015.csv','2016/大樂透_2016.csv','2017/大樂透_2017.csv','2018/大樂透_201801_201812.csv','2019/大樂透_2019.csv','2020/大樂透_202001_202012.csv','2021/大樂透_2021.csv','2022/大樂透_2022.csv','2023/大樂透_2023.csv','2024/大樂透_2024.csv','2025/大樂透_2025.csv','2026/大樂透_2026.csv'];
+
+        const powerballFiles = ['2008/威力彩_2008.csv','2009/威力彩_2009.csv','2010/威力彩_2010.csv','2011/威力彩_2011.csv','2012/威力彩_2012.csv','2013/威力彩_2013.csv','2014/威力彩_2014.csv','2015/威力彩_2015.csv','2016/威力彩_2016.csv','2017/威力彩_2017.csv','2018/威力彩_201801_201812.csv','2019/威力彩_2019.csv','2020/威力彩_202001_202012.csv','2021/威力彩_2021.csv','2022/威力彩_2022.csv','2023/威力彩_2023.csv','2024/威力彩_2024.csv','2025/威力彩_2025.csv','2026/威力彩_2026.csv'];
+
+        async function loadAllCSV(files) {
+            const allData = [];
+            const baseUrl = 'https://raw.githubusercontent.com/danieleeyh/Taiwan-Lottery/main/';
+            for (const file of files) {
+                try {
+                    const res = await fetch(baseUrl + file);
+                    if (res.ok) {
+                        const text = await res.text();
+                        const lines = text.split('\n').slice(1).filter(r => r.trim());
+                        allData.push(...lines);
+                    }
+                } catch (e) { console.log('載入失敗:', file); }
+            }
+            return allData;
+        }
+
+        async function init() {
+            document.getElementById('lotto-analysis').innerHTML = '<div class="loading">載入 2007-2026 大樂透數據中...</div>';
+            document.getElementById('powerball-analysis').innerHTML = '<div class="loading">載入 2008-2026 威力彩數據中...</div>';
+            lottoData = await loadAllCSV(lottoFiles);
+            powerballData = await loadAllCSV(powerballFiles);
+            analyzeData();
+            renderAll();
+        }
+
+        function analyzeData() {
+            lottoAnalysis = { freq: {} };
+            lottoDraws = new Set();
+            lottoData.forEach(row => {
+                const cols = row.split(',');
+                const nums = cols.slice(2, 8).map(n => parseInt(n.trim())).sort((a,b) => a-b);
+                if (nums.length === 6 && nums.every(n => !isNaN(n))) {
+                    lottoDraws.add(nums.join(','));
+                    nums.forEach(n => lottoAnalysis.freq[n] = (lottoAnalysis.freq[n] || 0) + 1);
+                }
+            });
+            powerballAnalysis = { freq: {} };
+            powerballDraws = new Set();
+            powerballData.forEach(row => {
+                const cols = row.split(',');
+                const nums = cols.slice(2, 8).map(n => parseInt(n.trim())).sort((a,b) => a-b);
+                if (nums.length === 6 && nums.every(n => !isNaN(n))) {
+                    powerballDraws.add(nums.join(','));
+                    nums.forEach(n => powerballAnalysis.freq[n] = (powerballAnalysis.freq[n] || 0) + 1);
+                }
+            });
+        }
+
+        function renderAll() {
+            document.getElementById('lotto-count').textContent = lottoData.length.toLocaleString();
+            if (lottoData.length > 0) document.getElementById('lotto-latest').textContent = lottoData[0].split(',')[1];
+            const lottoTop = Object.entries(lottoAnalysis.freq).sort((a,b) => b[1] - a[1])[0];
+            document.getElementById('lotto-top').textContent = lottoTop ? lottoTop[0] : '-';
+            document.getElementById('powerball-count').textContent = powerballData.length.toLocaleString();
+            if (powerballData.length > 0) document.getElementById('powerball-latest').textContent = powerballData[0].split(',')[1];
+            const powerballTop = Object.entries(powerballAnalysis.freq).sort((a,b) => b[1] - a[1])[0];
+            document.getElementById('powerball-top').textContent = powerballTop ? powerballTop[0] : '-';
+            filterLotto(currentLottoFilter);
+            filterPowerball(currentPowerballFilter);
+            renderHistory();
+            renderRecommendation();
+        }
+
+        function filterLotto(type) {
+            currentLottoFilter = type;
+            document.querySelectorAll('#lotto-section .filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            let nums = Object.entries(lottoAnalysis.freq);
+            if (type === 'hot') nums = nums.sort((a,b) => b[1] - a[1]).slice(0, 15);
+            else if (type === 'cold') nums = nums.sort((a,b) => a[1] - b[1]).slice(0, 15);
+            else nums = nums.filter(([n,c]) => c < 10).slice(0, 15);
+            document.getElementById('lotto-analysis').innerHTML = nums.map(([n,c]) => '<div class="number lotto-num" title="' + c + '次">' + n + '</div>').join('');
+        }
+
+        function filterPowerball(type) {
+            currentPowerballFilter = type;
+            document.querySelectorAll('#powerball-section .filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            let nums = Object.entries(powerballAnalysis.freq);
+            if (type === 'hot') nums = nums.sort((a,b) => b[1] - a[1]).slice(0, 15);
+            else if (type === 'cold') nums = nums.sort((a,b) => a[1] - b[1]).slice(0, 15);
+            else nums = nums.filter(([n,c]) => c < 10).slice(0, 15);
+            document.getElementById('powerball-analysis').innerHTML = nums.map(([n,c]) => '<div class="number powerball-num" title="' + c + '次">' + n + '</div>').join('');
+        }
+
+        function renderHistory() {
+            document.getElementById('lotto-history').innerHTML = lottoData.slice(0, 20).map(row => {
+                const cols = row.split(',');
+                const nums = cols.slice(2, 8).map(n => n.trim());
+                return '<div class="history-item"><span class="history-date">' + cols[1] + '</span><div class="history-nums">' + nums.map(n => '<span class="number lotto-num" style="width:32px;height:32px;font-size:0.8rem">' + n + '</span>').join('') + '</div></div>';
+            }).join('');
+            document.getElementById('powerball-history').innerHTML = powerballData.slice(0, 20).map(row => {
+                const cols = row.split(',');
+                const nums = cols.slice(2, 8).map(n => n.trim());
+                return '<div class="history-item"><span class="history-date">' + cols[1] + '</span><div class="history-nums">' + nums.map(n => '<span class="number powerball-num" style="width:32px;height:32px;font-size:0.8rem">' + n + '</span>').join('') + '</div></div>';
+            }).join('');
+        }
+
+        function renderRecommendation() {
+            const weightedLotto = Object.entries(lottoAnalysis.freq).map(([n,c]) => ({n: parseInt(n), weight: 50-c}));
+            const lottoRec = [];
+            while(lottoRec.length < 6 && weightedLotto.length > 0) {
+                const totalWeight = weightedLotto.reduce((s, i) => s + i.weight, 0);
+                let r = Math.random() * totalWeight;
+                for (let i = 0; i < weightedLotto.length; i++) {
+                    r -= weightedLotto[i].weight;
+                    if (r <= 0) {
+                        if (!lottoRec.includes(weightedLotto[i].n)) lottoRec.push(weightedLotto[i].n);
+                        weightedLotto.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+            document.getElementById('lotto-recommend').innerHTML = lottoRec.sort((a,b) => a-b).map(n => '<div class="rec-num">' + n + '</div>').join('');
+
+            const weightedPowerball = Object.entries(powerballAnalysis.freq).map(([n,c]) => ({n: parseInt(n), weight: 50-c}));
+            const powerballRec = [];
+            while(powerballRec.length < 6 && weightedPowerball.length > 0) {
+                const totalWeight = weightedPowerball.reduce((s, i) => s + i.weight, 0);
+                let r = Math.random() * totalWeight;
+                for (let i = 0; i < weightedPowerball.length; i++) {
+                    r -= weightedPowerball[i].weight;
+                    if (r <= 0) {
+                        if (!powerballRec.includes(weightedPowerball[i].n)) powerballRec.push(weightedPowerball[i].n);
+                        weightedPowerball.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+            document.getElementById('powerball-recommend').innerHTML = powerballRec.sort((a,b) => a-b).map(n => '<div class="rec-num">' + n + '</div>').join('');
+        }
+
+        function searchLotto() {
+            const nums = [];
+            for (let i = 1; i <= 6; i++) {
+                const val = parseInt(document.getElementById('lotto-search-' + i).value);
+                if (!val || val < 1 || val > 49) { alert('請輸入 1-49 的數字'); return; }
+                nums.push(val);
+            }
+            const combo = nums.sort((a,b) => a-b).join(',');
+            const result = document.getElementById('lotto-search-result');
+            result.style.display = 'block';
+            if (lottoDraws.has(combo)) {
+                result.className = 'search-result drawn';
+                result.innerHTML = '此組合已經開出過（共 ' + lottoDraws.size.toLocaleString() + ' 期）';
+            } else {
+                result.className = 'search-result never';
+                result.innerHTML = '此組合從未開出過（共 ' + lottoDraws.size.toLocaleString() + ' 期）';
+            }
+        }
+
+        function searchPowerball() {
+            const nums = [];
+            for (let i = 1; i <= 6; i++) {
+                const val = parseInt(document.getElementById('powerball-search-' + i).value);
+                if (!val || val < 1 || val > 49) { alert('請輸入 1-49 的數字'); return; }
+                nums.push(val);
+            }
+            const combo = nums.sort((a,b) => a-b).join(',');
+            const result = document.getElementById('powerball-search-result');
+            result.style.display = 'block';
+            if (powerballDraws.has(combo)) {
+                result.className = 'search-result drawn';
+                result.innerHTML = '此組合已經開出過（共 ' + powerballDraws.size.toLocaleString() + ' 期）';
+            } else {
+                result.className = 'search-result never';
+                result.innerHTML = '此組合從未開出過（共 ' + powerballDraws.size.toLocaleString() + ' 期）';
+            }
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('lotto-section').style.display = tab === 'lotto' ? 'block' : 'none';
+            document.getElementById('powerball-section').style.display = tab === 'powerball' ? 'block' : 'none';
+        }
+
+        init();
+    </script>
+</body>
+</html>
