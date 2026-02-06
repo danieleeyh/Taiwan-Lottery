@@ -296,7 +296,7 @@
                 document.getElementById('powerball-rec').innerHTML = finalNumbers.map(n => 
                     `<span class="rec-num" style="${pickedNumbers.has(n) ? 'background:rgba(255,255,255,0.3);' : ''}">${n.toString().padStart(2,'0')}</span>`
                 ).join('') + 
-                '<span style="margin:0 5px;color:#38ef7d;">+</span>' +
+                `<span style="margin:0 8px;color:#38ef7d;font-size:1.5rem;font-weight:bold;vertical-align:middle;">+</span>` +
                 finalPowerball2.map(n => 
                     `<span class="rec-num" style="${pickedPowerball2.has(n) ? 'background:rgba(255,255,255,0.3);' : 'background:#38ef7d;'}">${n.toString().padStart(2,'0')}</span>`
                 ).join('');
