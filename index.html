@@ -124,13 +124,13 @@
             <div class="stats">
                 <div class="stat-card"><div class="stat-value">1,747</div><div class="stat-label">總期數</div></div>
                 <div class="stat-card"><div class="stat-value">04, 15</div><div class="stat-label">最常開出</div></div>
-                <div class="stat-card"><div class="stat-value">6+2</div><div class="stat-label">選號數量</div></div>
+                <div class="stat-card"><div class="stat-value">6+1</div><div class="stat-label">選號數量</div></div>
             </div>
 
             <!-- AI 推薦 -->
             <div class="recommendation">
                 <h3>🤖 AI 智能推薦</h3>
-                <p class="rec-count" id="powerball-rec-count">已選 0 個，AI 推薦 6+2 個</p>
+                <p class="rec-count" id="powerball-rec-count">已選 0 個，AI 推薦 6+1 個</p>
                 <div class="rec-nums" id="powerball-rec"></div>
                 <p class="rec-info" id="powerball-rec-info" style="margin-bottom:15px;">根據 2008-2026 年開出頻率</p>
             </div>
@@ -283,7 +283,7 @@
             // 威力彩第二區
             const powerball2Pool = powerball2Hot.filter(n => !pickedPowerball2.has(n));
             shuffle(powerball2Pool);
-            const powerball2Selected = powerball2Pool.slice(0, 2 - pickedPowerball2.size);
+            const powerball2Selected = powerball2Pool.slice(0, 1 - pickedPowerball2.size);
             const finalPowerball2 = [...pickedPowerball2, ...powerball2Selected].sort((a,b) => a-b);
 
             // 顯示推薦
@@ -299,9 +299,9 @@
                 ).join('') + 
                 '<span style="margin:0 5px;color:#38ef7d;">+</span>' +
                 finalPowerball2.map(n => 
-                    `<span class="rec-num" style="${pickedPowerball2.has(n) ? 'background:rgba(255,255,255,0.3);' : 'background:#38ef7d;'}">${n}</span>`
+                    `<span class="rec-num" style="${pickedPowerball2.has(n) ? 'background:rgba(255,255,255,0.3);' : 'background:#38ef7d;'}">${n.toString().padStart(2,'0')}</span>`
                 ).join('');
-                document.getElementById('powerball-rec-info').textContent = '第一區 6 個 + 第二區 2 個';
+                document.getElementById('powerball-rec-info').textContent = '第一區 6 個 + 第二區 1 個';
             }
         }
 
