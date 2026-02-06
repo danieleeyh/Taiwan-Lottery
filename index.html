@@ -132,7 +132,12 @@
                 <h3>🤖 AI 智能推薦</h3>
                 <p class="rec-count" id="powerball-rec-count">已選 0 個，AI 推薦 6+1 個</p>
                 <div class="rec-nums" id="powerball-rec"></div>
-                <p class="rec-info" id="powerball-rec-info" style="margin-bottom:15px;">根據 2008-2026 年開出頻率</p>
+                <div class="filter-btns" style="justify-content:center; margin-top:15px;">
+                    <button class="filter-btn active" onclick="setStrategy('hot')">🔥 熱門</button>
+                    <button class="filter-btn" onclick="setStrategy('cold')">❄️ 冷門</button>
+                    <button class="filter-btn" onclick="setStrategy('random')">🎲 隨機</button>
+                </div>
+                <p class="rec-info" id="powerball-rec-info">根據 2008-2026 年開出頻率</p>
             </div>
 
             <!-- 自選號碼 - 第一區 -->
