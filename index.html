@@ -327,8 +327,9 @@
             document.getElementById('lotto-panel').style.display = tab === 'lotto' ? 'block' : 'none';
             document.getElementById('powerball-panel').style.display = tab === 'powerball' ? 'block' : 'none';
             pickedNumbers.clear();
+            pickedPowerball2.clear();
             updateUI();
-            generateRecommendation();
+            generateRecommendation(); // 确保切换标签时也生成推荐
         }
 
         // 初始化
