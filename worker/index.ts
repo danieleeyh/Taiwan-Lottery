@@ -10,123 +10,458 @@ export default {
       return handlePowerball(env);
     } else if (path === '/api/stats') {
       return handleStats(env);
+    } 
+    // 首頁 - 返回 HTML
+    else if (path === '/' || path === '') {
+      return serveHTML();
     }
-
-    return new Response('Not Found', { status: 404 });
+    
+    return new Response('Taiwan Lottery API\n/api/lotto, /api/powerball, /api/stats', { 
+      headers: { 'Content-Type': 'text/plain' } 
+    });
   }
 };
 
+async function serveHTML() {
+  const html = `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>台灣彩券分析器</title>
+    <meta name="description" content="大樂透、威力彩歷史開獎號碼分析 - AI智能選號">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh; color: #fff; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 { text-align: center; margin-bottom: 10px; font-size: 2rem; }
+        .subtitle { text-align: center; color: #aaa; margin-bottom: 20px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .tab { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; background: rgba(255,255,255,0.1); color: #fff; }
+        .tab.active { background: #e94560; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-card { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; text-align: center; }
+        .stat-value { font-size: 1.5rem; font-weight: bold; color: #e94560; }
+        .stat-label { color: #aaa; font-size: 0.85rem; margin-top: 5px; }
+        .section { background: rgba(255,255,255,0.05); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        .section h2 { margin-bottom: 15px; color: #e94560; font-size: 1.2rem; }
+        .filter-btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px; }
+        .filter-btn { padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; background: rgba(255,255,255,0.1); color: #fff; font-size: 0.9rem; }
+        .filter-btn.active { background: #0f3460; border: 2px solid #e94560; }
+        
+        .number-grid { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 15px 0; }
+        .number-btn { width: 42px; height: 42px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; font-weight: bold; font-size: 1rem; cursor: pointer; }
+        .number-btn:hover { border-color: #e94560; transform: scale(1.1); }
+        .number-btn.selected { background: #e94560; border-color: #e94560; box-shadow: 0 0 15px rgba(233, 69, 96, 0.5); }
+        
+        .lotto-grid .number-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; }
+        .lotto-grid .number-btn.selected { background: #e94560; }
+        
+        .powerball-grid .number-btn { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; }
+        .powerball-grid .number-btn.selected { background: #11998e; box-shadow: 0 0 15px rgba(17, 153, 142, 0.5); }
+        
+        .powerball2-grid .number-btn { width: 38px; height: 38px; font-size: 0.9rem; background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); border: none; }
+        .powerball2-grid .number-btn.selected { background: #e94560; }
+        
+        .recommendation { background: rgba(233, 69, 96, 0.15); border: 2px solid #e94560; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
+        .recommendation h3 { color: #e94560; margin: 0 0 15px 0; font-size: 1.1rem; }
+        .rec-nums { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+        .rec-num { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #e94560; font-weight: bold; font-size: 1.2rem; }
+        
+        .your-picks { margin: 15px 0; }
+        .your-picks h4 { color: #aaa; margin-bottom: 10px; font-size: 0.9rem; }
+        .picked-nums { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+        .picked-num { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: rgba(255,255,255,0.2); font-size: 0.9rem; }
+        
+        .action-btns { display: flex; gap: 10px; justify-content: center; margin: 20px 0; flex-wrap: wrap; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; }
+        .btn-primary { background: #e94560; color: #fff; }
+        .btn-primary:hover { background: #ff6b6b; transform: translateY(-2px); }
+        .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
+        
+        .history { max-height: 300px; overflow-y: auto; }
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .history-date { color: #aaa; font-size: 0.9rem; }
+        .history-nums { display: flex; gap: 5px; }
+        .history-nums2 { display: flex; gap: 5px; margin-left: 10px; padding-left: 10px; border-left: 2px solid rgba(255,255,255,0.2); }
+        .rec-info { font-size: 0.85rem; color: #aaa; margin-top: 10px; text-align: center; }
+        .loading { text-align: center; padding: 40px; color: #aaa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>台灣彩券分析器</h1>
+        <p class="subtitle">大樂透 & 威力彩 AI 智能選號</p>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('lotto')">大樂透</button>
+            <button class="tab" onclick="switchTab('powerball')">威力彩</button>
+        </div>
+
+        <div id="loading" class="loading">載入歷史數據中...</div>
+
+        <div id="lotto-panel" style="display:none;">
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="lotto-count">-</div><div class="stat-label">總期數</div></div>
+                <div class="stat-card"><div class="stat-value" id="lotto-latest">-</div><div class="stat-label">最新期數</div></div>
+                <div class="stat-card"><div class="stat-value" id="lotto-top">-</div><div class="stat-label">最常開出</div></div>
+            </div>
+
+            <div class="recommendation">
+                <h3>🤖 AI 智能推薦</h3>
+                <p class="rec-count" id="lotto-rec-count">載入中...</p>
+                <div class="rec-nums" id="lotto-rec"></div>
+                <div class="filter-btns" style="justify-content:center; margin-top:15px;">
+                    <button class="filter-btn active" onclick="setStrategy('hot')">🔥 熱門</button>
+                    <button class="filter-btn" onclick="setStrategy('cold')">❄️ 冷門</button>
+                    <button class="filter-btn" onclick="setStrategy('random')">🎲 隨機</button>
+                </div>
+                <p class="rec-info" id="lotto-rec-info">根據 2007-2026 年開出頻率</p>
+            </div>
+
+            <div class="section">
+                <h2>🎯 自選號碼</h2>
+                <p style="color:#aaa; font-size:0.9rem; margin-bottom:15px;">點擊號碼進行選擇</p>
+                <div class="number-grid lotto-grid" id="lotto-numbers"></div>
+                <div class="your-picks"><h4>已選擇的號碼：</h4><div class="picked-nums" id="lotto-picked"></div></div>
+                <div class="action-btns">
+                    <button class="btn btn-secondary" onclick="clearPicks()">清除重選</button>
+                    <button class="btn btn-primary" onclick="generateRecommendation()">✨ 重新推薦</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📜 歷史開獎</h2>
+                <div class="history" id="lotto-history"></div>
+            </div>
+        </div>
+
+        <div id="powerball-panel" style="display:none;">
+            <div class="stats">
+                <div class="stat-card"><div class="stat-value" id="powerball-count">-</div><div class="stat-label">總期數</div></div>
+                <div class="stat-card"><div class="stat-value" id="powerball-latest">-</div><div class="stat-label">最新期數</div></div>
+                <div class="stat-card"><div class="stat-value" id="powerball-top">-</div><div class="stat-label">最常開出</div></div>
+            </div>
+
+            <div class="recommendation">
+                <h3>🤖 AI 智能推薦</h3>
+                <p class="rec-count" id="powerball-rec-count">載入中...</p>
+                <div class="rec-nums" id="powerball-rec"></div>
+                <div class="filter-btns" style="justify-content:center; margin-top:15px;">
+                    <button class="filter-btn active" onclick="setStrategy('hot')">🔥 熱門</button>
+                    <button class="filter-btn" onclick="setStrategy('cold')">❄️ 冷門</button>
+                    <button class="filter-btn" onclick="setStrategy('random')">🎲 隨機</button>
+                </div>
+                <p class="rec-info" id="powerball-rec-info">根據 2008-2026 年開出頻率</p>
+            </div>
+
+            <div class="section">
+                <h2>🎯 自選號碼 - 第一區 (01-38)</h2>
+                <div class="number-grid powerball-grid" id="powerball-numbers"></div>
+                <div class="your-picks"><h4>已選擇的號碼：</h4><div class="picked-nums" id="powerball-picked"></div></div>
+                <div class="action-btns">
+                    <button class="btn btn-secondary" onclick="clearPicks()">清除重選</button>
+                    <button class="btn btn-primary" onclick="generateRecommendation()">✨ 重新推薦</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🎯 自選號碼 - 第二區 (01-08)</h2>
+                <div class="number-grid powerball2-grid" id="powerball2-numbers"></div>
+            </div>
+
+            <div class="section">
+                <h2>📜 歷史開獎</h2>
+                <div class="history" id="powerball-history"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let lottoData = [], powerballData = [];
+        let currentTab = 'lotto';
+        let pickedNumbers = new Set();
+        let pickedPowerball2 = new Set();
+        let currentStrategy = 'hot';
+
+        async function loadData() {
+            document.getElementById('loading').style.display = 'block';
+            
+            try {
+                const lottoRes = await fetch('/api/lotto');
+                const lottoJson = await lottoRes.json();
+                if (lottoJson.success) lottoData = lottoJson.data;
+
+                const powerballRes = await fetch('/api/powerball');
+                const powerballJson = await powerballRes.json();
+                if (powerballJson.success) powerballData = powerballJson.data;
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('lotto-panel').style.display = 'block';
+                
+                initNumberGrids();
+                analyzeData();
+                renderStats();
+                generateRecommendation();
+                renderHistory();
+            } catch (e) {
+                document.getElementById('loading').innerHTML = '載入失敗，請重新整理頁面';
+                console.error(e);
+            }
+        }
+
+        function analyzeData() {
+            window.lottoFreq = {};
+            lottoData.forEach(item => {
+                item.nums.forEach(n => { window.lottoFreq[n] = (window.lottoFreq[n] || 0) + 1; });
+            });
+
+            window.powerballFreq = {};
+            powerballData.forEach(item => {
+                item.nums.forEach(n => { window.powerballFreq[n] = (window.powerballFreq[n] || 0) + 1; });
+            });
+        }
+
+        function renderStats() {
+            document.getElementById('lotto-count').textContent = lottoData.length.toLocaleString();
+            if (lottoData.length > 0) document.getElementById('lotto-latest').textContent = lottoData[0].period;
+            const lottoTop = Object.entries(window.lottoFreq).sort((a,b) => b[1] - a[1])[0];
+            document.getElementById('lotto-top').textContent = lottoTop ? lottoTop[0] : '-';
+
+            document.getElementById('powerball-count').textContent = powerballData.length.toLocaleString();
+            if (powerballData.length > 0) document.getElementById('powerball-latest').textContent = powerballData[0].period;
+            const powerballTop = Object.entries(window.powerballFreq).sort((a,b) => b[1] - a[1])[0];
+            document.getElementById('powerball-top').textContent = powerballTop ? powerballTop[0] : '-';
+        }
+
+        function renderHistory() {
+            document.getElementById('lotto-history').innerHTML = lottoData.slice(0, 20).map(item => \`
+                <div class="history-item">
+                    <span class="history-date">\${item.date} (\${item.period})</span>
+                    <div class="history-nums">
+                        \${item.nums.map(n => \`<span class="number-btn" style="width:32px;height:32px;font-size:0.8rem">\${n}</span>\`).join('')}
+                    </div>
+                </div>
+            \`).join('');
+
+            document.getElementById('powerball-history').innerHTML = powerballData.slice(0, 20).map(item => \`
+                <div class="history-item">
+                    <span class="history-date">\${item.date} (\${item.period})</span>
+                    <div>
+                        <div class="history-nums">
+                            \${item.nums.map(n => \`<span class="number-btn" style="width:32px;height:32px;font-size:0.8rem;background:linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">\${n}</span>\`).join('')}
+                        </div>
+                        \${item.zone2 ? \`<div class="history-nums2"><span class="number-btn" style="width:28px;height:28px;font-size:0.7rem;background:linear-gradient(135deg, #11998e 0%, #38ef7d 100%)">\${item.zone2}</span></div>\` : ''}
+                    </div>
+                </div>
+            \`).join('');
+        }
+
+        function initNumberGrids() {
+            for (let i = 1; i <= 49; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'number-btn';
+                btn.textContent = i.toString().padStart(2,'0');
+                btn.onclick = () => toggleNumber(i);
+                document.getElementById('lotto-numbers').appendChild(btn);
+            }
+            for (let i = 1; i <= 38; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'number-btn';
+                btn.textContent = i.toString().padStart(2,'0');
+                btn.onclick = () => toggleNumber(i);
+                document.getElementById('powerball-numbers').appendChild(btn);
+            }
+            for (let i = 1; i <= 8; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'number-btn';
+                btn.textContent = i.toString().padStart(2,'0');
+                btn.onclick = () => togglePowerball2(i);
+                document.getElementById('powerball2-numbers').appendChild(btn);
+            }
+        }
+
+        function toggleNumber(num) {
+            pickedNumbers.has(num) ? pickedNumbers.delete(num) : pickedNumbers.add(num);
+            updateUI();
+            generateRecommendation();
+        }
+
+        function togglePowerball2(num) {
+            pickedPowerball2.clear();
+            pickedPowerball2.add(num);
+            updateUI();
+        }
+
+        function clearPicks() {
+            pickedNumbers.clear();
+            pickedPowerball2.clear();
+            updateUI();
+            generateRecommendation();
+        }
+
+        function updateUI() {
+            document.querySelectorAll('#lotto-numbers .number-btn').forEach((btn, idx) => {
+                btn.classList.toggle('selected', pickedNumbers.has(idx + 1));
+            });
+            document.querySelectorAll('#powerball-numbers .number-btn').forEach((btn, idx) => {
+                btn.classList.toggle('selected', pickedNumbers.has(idx + 1));
+            });
+            document.querySelectorAll('#powerball2-numbers .number-btn').forEach((btn, idx) => {
+                btn.classList.toggle('selected', pickedPowerball2.has(idx + 1));
+            });
+            document.getElementById('lotto-picked').innerHTML = [...pickedNumbers].sort((a,b) => a-b).map(n => \`<span class="picked-num">\${n.toString().padStart(2,'0')}</span>\`).join('');
+            document.getElementById('powerball-picked').innerHTML = [...pickedNumbers].sort((a,b) => a-b).map(n => \`<span class="picked-num">\${n.toString().padStart(2,'0')}</span>\`).join('');
+        }
+
+        function generateRecommendation() {
+            const freq = currentTab === 'lotto' ? window.lottoFreq : window.powerballFreq;
+            let pool = Object.entries(freq).sort((a,b) => {
+                if (currentStrategy === 'hot') return b[1] - a[1];
+                if (currentStrategy === 'cold') return a[1] - b[1];
+                return Math.random() - 0.5;
+            }).map(([n,c]) => parseInt(n)).filter(n => !pickedNumbers.has(n));
+            
+            if (currentStrategy === 'random') pool = shuffle(pool.slice(0, 20));
+            
+            const selected = shuffle(pool).slice(0, 6 - pickedNumbers.size);
+            const finalNumbers = [...pickedNumbers, ...selected].sort((a,b) => a-b);
+
+            const powerball2Pool = [1,2,3,4,5,6,7,8].filter(n => !pickedPowerball2.has(n));
+            const powerball2Selected = pickedPowerball2.size === 0 ? [shuffle(powerball2Pool)[0]] : [];
+            const finalPowerball2 = [...pickedPowerball2, ...powerball2Selected];
+
+            if (currentTab === 'lotto') {
+                document.getElementById('lotto-rec').innerHTML = finalNumbers.map(n => \`<span class="rec-num" style="\${pickedNumbers.has(n) ? 'background:rgba(255,255,255,0.3);' : ''}">\${n.toString().padStart(2,'0')}</span>\`).join('');
+                document.getElementById('lotto-rec-count').textContent = \`已選 \${pickedNumbers.size} 個，AI 推薦 \${Math.max(0, 6 - pickedNumbers.size)} 個\`;
+            } else {
+                document.getElementById('powerball-rec').innerHTML = finalNumbers.map(n => \`<span class="rec-num" style="\${pickedNumbers.has(n) ? 'background:rgba(255,255,255,0.3);' : ''}">\${n.toString().padStart(2,'0')}</span>\`).join('') + 
+                    \`<span style="margin:0 8px;color:#38ef7d;font-size:1.5rem;font-weight:bold;">+</span>\` +
+                    finalPowerball2.map(n => \`<span class="rec-num" style="\${pickedPowerball2.has(n) ? 'background:rgba(255,255,255,0.3);' : 'background:#38ef7d;'}">\${n.toString().padStart(2,'0')}</span>\`).join('');
+                document.getElementById('powerball-rec-count').textContent = \`已選 \${pickedNumbers.size} 個 + \${pickedPowerball2.size} 個\`;
+            }
+        }
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function setStrategy(strategy) {
+            currentStrategy = strategy;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            generateRecommendation();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById('lotto-panel').style.display = tab === 'lotto' ? 'block' : 'none';
+            document.getElementById('powerball-panel').style.display = tab === 'powerball' ? 'block' : 'none';
+            pickedNumbers.clear();
+            updateUI();
+            generateRecommendation();
+        }
+
+        loadData();
+    </script>
+</body>
+</html>`;
+
+  return new Response(html, {
+    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+  });
+}
+
 async function handleLotto(env) {
-  try {
-    // 从 GitHub 获取所有大樂透 CSV
-    const years = [2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026];
-    const files = [
-      '2007/大樂透_2007.csv', '2008/大樂透_2008.csv', '2009/大樂透_2009.csv',
-      '2010/大樂透_2010.csv', '2011/大樂透_2011.csv', '2012/大樂透_2012.csv',
-      '2013/大樂透_2013.csv', '2014/大樂透_2014.csv', '2015/大樂透_2015.csv',
-      '2016/大樂透_2016.csv', '2017/大樂透_2017.csv',
-      '2018/大樂透_201801_201812.csv', '2019/大樂透_2019.csv',
-      '2020/大樂透_202001_202012.csv', '2021/大樂透_2021.csv',
-      '2022/大樂透_2022.csv', '2023/大樂透_2023.csv', '2024/大樂透_2024.csv',
-      '2025/大樂透_2025.csv', '2026/大樂透_2026.csv'
-    ];
-    
-    const baseUrl = 'https://raw.githubusercontent.com/danieleeyh/Taiwan-Lottery/main/';
-    const allData = [];
-    
-    for (const file of files) {
-      try {
-        const res = await fetch(baseUrl + file);
-        if (res.ok) {
-          const text = await res.text();
-          const lines = text.split('\n').slice(1);
-          for (const line of lines) {
-            if (line.trim()) {
-              const cols = line.split(',');
-              if (cols.length >= 8) {
-                allData.push({
-                  period: cols[1],
-                  date: cols[2],
-                  nums: cols.slice(7, 13).map(n => parseInt(n.trim()))
-                });
+  const allData = [];
+  const baseUrl = 'https://raw.githubusercontent.com/danieleeyh/Taiwan-Lottery/main/';
+  
+  const files = [
+    '2007/大樂透_2007.csv', '2008/大樂透_2008.csv', '2009/大樂透_2009.csv',
+    '2010/大樂透_2010.csv', '2011/大樂透_2011.csv', '2012/大樂透_2012.csv',
+    '2013/大樂透_2013.csv', '2014/大樂透_2014.csv', '2015/大樂透_2015.csv',
+    '2016/大樂透_2016.csv', '2017/大樂透_2017.csv',
+    '2018/大樂透_201801_201812.csv', '2019/大樂透_2019.csv',
+    '2020/大樂透_202001_202012.csv', '2021/大樂透_2021.csv',
+    '2022/大樂透_2022.csv', '2023/大樂透_2023.csv', '2024/大樂透_2024.csv',
+    '2025/大樂透_2025.csv', '2026/大樂透_2026.csv'
+  ];
+  
+  for (const file of files) {
+    try {
+      const res = await fetch(baseUrl + encodeURI(file));
+      if (res.ok) {
+        const text = await res.text();
+        const lines = text.split('\n').slice(1);
+        for (const line of lines) {
+          if (line.trim()) {
+            const cols = line.split(',');
+            if (cols.length >= 8) {
+              const nums = cols.slice(7, 13).map(n => parseInt(n.trim()));
+              if (nums.every(n => !isNaN(n))) {
+                allData.push({ period: cols[1], date: cols[2], nums: nums });
               }
             }
           }
         }
-      } catch (e) { continue; }
-    }
-    
-    return new Response(JSON.stringify({ 
-      success: true, 
-      count: allData.length,
-      data: allData 
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } catch (e) {
-    return new Response(JSON.stringify({ success: false, error: e.message }), {
-      status: 500, headers: { 'Content-Type': 'application/json' }
-    });
+      }
+    } catch (e) { continue; }
   }
+  
+  return new Response(JSON.stringify({ success: true, count: allData.length, data: allData }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
 }
 
 async function handlePowerball(env) {
-  try {
-    const files = [
-      '2008/威力彩_2008.csv', '2009/威力彩_2009.csv', '2010/威力彩_2010.csv',
-      '2011/威力彩_2011.csv', '2012/威力彩_2012.csv', '2013/威力彩_2013.csv',
-      '2014/威力彩_2014.csv', '2015/威力彩_2015.csv', '2016/威力彩_2016.csv',
-      '2017/威力彩_2017.csv', '2018/威力彩_201801_201812.csv', '2019/威力彩_2019.csv',
-      '2020/威力彩_202001_202012.csv', '2021/威力彩_2021.csv',
-      '2022/威力彩_2022.csv', '2023/威力彩_2023.csv', '2024/威力彩_2024.csv',
-      '2025/威力彩_2025.csv', '2026/威力彩_2026.csv'
-    ];
-    
-    const baseUrl = 'https://raw.githubusercontent.com/danieleeyh/Taiwan-Lottery/main/';
-    const allData = [];
-    
-    for (const file of files) {
-      try {
-        const res = await fetch(baseUrl + file);
-        if (res.ok) {
-          const text = await res.text();
-          const lines = text.split('\n').slice(1);
-          for (const line of lines) {
-            if (line.trim()) {
-              const cols = line.split(',');
-              if (cols.length >= 8) {
-                allData.push({
-                  period: cols[1],
-                  date: cols[2],
-                  nums: cols.slice(7, 13).map(n => parseInt(n.trim())),
-                  zone2: cols[13] ? parseInt(cols[13].trim()) : null
-                });
+  const allData = [];
+  const baseUrl = 'https://raw.githubusercontent.com/danieleeyh/Taiwan-Lottery/main/';
+  
+  const files = [
+    '2008/威力彩_2008.csv', '2009/威力彩_2009.csv', '2010/威力彩_2010.csv',
+    '2011/威力彩_2011.csv', '2012/威力彩_2012.csv', '2013/威力彩_2013.csv',
+    '2014/威力彩_2014.csv', '2015/威力彩_2015.csv', '2016/威力彩_2016.csv',
+    '2017/威力彩_2017.csv', '2018/威力彩_201801_201812.csv', '2019/威力彩_2019.csv',
+    '2020/威力彩_202001_202012.csv', '2021/威力彩_2021.csv',
+    '2022/威力彩_2022.csv', '2023/威力彩_2023.csv', '2024/威力彩_2024.csv',
+    '2025/威力彩_2025.csv', '2026/威力彩_2026.csv'
+  ];
+  
+  for (const file of files) {
+    try {
+      const res = await fetch(baseUrl + encodeURI(file));
+      if (res.ok) {
+        const text = await res.text();
+        const lines = text.split('\n').slice(1);
+        for (const line of lines) {
+          if (line.trim()) {
+            const cols = line.split(',');
+            if (cols.length >= 8) {
+              const nums = cols.slice(7, 13).map(n => parseInt(n.trim()));
+              if (nums.every(n => !isNaN(n))) {
+                allData.push({ period: cols[1], date: cols[2], nums: nums, zone2: cols[13] ? parseInt(cols[13].trim()) : null });
               }
             }
           }
         }
-      } catch (e) { continue; }
-    }
-    
-    return new Response(JSON.stringify({ 
-      success: true, 
-      count: allData.length,
-      data: allData 
-    }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } catch (e) {
-    return new Response(JSON.stringify({ success: false, error: e.message }), {
-      status: 500, headers: { 'Content-Type': 'application/json' }
-    });
+      }
+    } catch (e) { continue; }
   }
+  
+  return new Response(JSON.stringify({ success: true, count: allData.length, data: allData }), {
+    headers: { 'Content-Type': 'application/json' }
+  });
 }
 
 async function handleStats(env) {
   return new Response(JSON.stringify({
     lotto: { total: 2091, years: '2007-2026' },
     powerball: { total: 1747, years: '2008-2026' }
-  }), {
-    headers: { 'Content-Type': 'application/json' }
-  });
+  }));
 }
